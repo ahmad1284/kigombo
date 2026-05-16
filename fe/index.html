@@ -163,7 +163,6 @@
         </div>
 
         <div class="add-tx-row">
-          <div id="transactionError" class="error" role="alert"></div>
           <button onclick="showAddTransactionDialog()">+ Add Transaction</button>
         </div>
       </main>
@@ -174,14 +173,30 @@
       <div class="dialog-content">
         <h2 class="text-center">Add Transaction</h2>
         <form id="transactionForm" action="javascript:void(0)">
-          <label for="txDate">Date</label>
-          <input id="txDate" name="date" type="date" required>
+
+          <!-- Income / Expense toggle -->
+          <div class="tx-type-toggle">
+            <button type="button" id="typeIncome"  class="type-btn type-income active" onclick="setTxType('income')">↑ Income</button>
+            <button type="button" id="typeExpense" class="type-btn type-expense"       onclick="setTxType('expense')">↓ Expense</button>
+          </div>
+
+          <label for="txAmount">Amount</label>
+          <div class="input-group">
+            <span class="input-prefix" id="txCurrencyPrefix">$</span>
+            <input id="txAmount" name="amount" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" required>
+          </div>
+
           <label for="txObject">Description</label>
           <input id="txObject" name="object" type="text" maxlength="50" required>
+
           <label for="txCategory">Category</label>
           <select id="txCategory" name="category"></select>
-          <label for="txAmount">Amount (negative = expense)</label>
-          <input id="txAmount" name="amount" type="number" value="0" step="any" required>
+
+          <label for="txDate">Date</label>
+          <input id="txDate" name="date" type="date" required>
+
+          <div id="transactionError" class="error" role="alert"></div>
+
           <div class="dialog-buttons">
             <button type="button" class="button-alt" onclick="cancelAddTransaction()">Cancel</button>
             <button formaction="javascript:confirmAddTransaction()">Add</button>

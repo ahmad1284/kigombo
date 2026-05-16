@@ -248,6 +248,72 @@ button:disabled { opacity: .4; cursor: not-allowed; filter: none; }
 .add-tx-row { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md); }
 
 /* ------------------------------------------------------------------ */
+/* Transaction type toggle */
+/* ------------------------------------------------------------------ */
+
+.tx-type-toggle {
+  display: flex;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin: var(--space-sm) var(--space-md) var(--space-md);
+}
+.type-btn {
+  flex: 1;
+  height: 44px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: none;
+  background: var(--background);
+  color: var(--accent);
+  transition: background .15s, color .15s;
+  min-width: 0;
+}
+.type-btn:focus { box-shadow: none; }
+.type-income.active  { background: #e8f5e9; color: #2e7d32; }
+.type-expense.active { background: #fce4ec; color: #c62828; }
+
+/* ------------------------------------------------------------------ */
+/* Input group (prefix + input) */
+/* ------------------------------------------------------------------ */
+
+.input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-top: 3px;
+  margin-bottom: var(--space-sm);
+  background: var(--white);
+}
+.input-group:focus-within { border-color: var(--primary); }
+.input-prefix {
+  padding: 0 var(--space-sm);
+  color: var(--accent);
+  font-weight: bold;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+  height: 42px;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+.input-group input {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  flex: 1;
+  height: 42px;
+  font-size: 1.1rem;
+}
+.input-group input:focus { outline: none; box-shadow: none; border: none; }
+
+/* ------------------------------------------------------------------ */
 /* Dialogs */
 /* ------------------------------------------------------------------ */
 

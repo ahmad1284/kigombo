@@ -135,7 +135,7 @@ async function renderWalletList() {
     card.className = 'wallet-card';
     card.innerHTML = `
       <div class="wallet-card-name">${esc(w.name)}</div>
-      <div class="wallet-card-balance">${esc(w.currency)} ${w.balance.toFixed(2)}</div>
+      <div class="wallet-card-balance">${esc(w.currency)} ${fmt(w.balance)}</div>
       <div class="wallet-card-desc">${esc(w.description)}</div>
     `;
     card.addEventListener('click', () => {
@@ -195,13 +195,13 @@ async function renderWalletDetail() {
 
   // Header
   setText('walletName', detail.name);
-  setText('walletBalance', `${detail.currency} ${detail.balance.toFixed(2)}`);
+  setText('walletBalance', `${detail.currency} ${fmt(detail.balance)}`);
   setText('walletDescription', detail.description);
 
   // Summary panel
-  setText('summaryIncome',   `+ ${detail.currency}${summary.income.toFixed(2)}`);
-  setText('summaryExpenses', `- ${detail.currency}${Math.abs(summary.expenses).toFixed(2)}`);
-  setText('summaryNet',      `${summary.net >= 0 ? '+' : ''}${detail.currency}${summary.net.toFixed(2)}`);
+  setText('summaryIncome',   `+ ${detail.currency}${fmt(summary.income)}`);
+  setText('summaryExpenses', `- ${detail.currency}${fmt(Math.abs(summary.expenses))}`);
+  setText('summaryNet',      `${summary.net >= 0 ? '+' : '-'}${detail.currency}${fmt(Math.abs(summary.net))}`);
   setText('summaryWeek',     `${summary.weekStart} → ${summary.weekEnd}`);
   document.getElementById('summaryNet').className =
     'summary-value ' + (summary.net >= 0 ? 'positive' : 'negative');
@@ -230,8 +230,8 @@ async function renderWalletDetail() {
       <td>${esc(tx.date)}</td>
       <td>${esc(tx.object)}</td>
       <td><span class="category-badge cat-${tx.category.toLowerCase()}">${esc(tx.category)}</span></td>
-      <td class="${tx.amount >= 0 ? 'positive' : 'negative'}">${tx.amount >= 0 ? '+' : ''}${tx.amount.toFixed(2)}</td>
-      <td>${tx.runningBalance.toFixed(2)}</td>
+      <td class="${tx.amount >= 0 ? 'positive' : 'negative'}">${tx.amount >= 0 ? '+' : '-'}${fmt(Math.abs(tx.amount))}</td>
+      <td>${fmt(tx.runningBalance)}</td>
       <td><button class="btn-icon" title="Delete" data-id="${tx.id}">✕</button></td>
     `;
     tr.querySelector('[data-id]').addEventListener('click', () => deleteTransaction(tx.id));
@@ -261,7 +261,22 @@ function nextPage() {
   }
 }
 
+let txType = 'income';
+
+function setTxType(type) {
+  txType = type;
+  document.getElementById('typeIncome').classList.toggle('active', type === 'income');
+  document.getElementById('typeExpense').classList.toggle('active', type === 'expense');
+  const sel = document.getElementById('txCategory');
+  if (type === 'income') {
+    sel.value = 'Income';
+  } else if (sel.value === 'Income') {
+    sel.value = 'Other';
+  }
+}
+
 function showAddTransactionDialog() {
+  txType = 'expense';
   const dialog = document.getElementById('transactionDialog');
   dialog.classList.add('show');
   const form = document.getElementById('transactionForm');
@@ -273,6 +288,27 @@ function showAddTransactionDialog() {
   sel.innerHTML = CATEGORIES.filter(c => c !== 'All')
     .map(c => `<option value="${c}">${c}</option>`).join('');
 
+  // Set initial type to Expense
+  setTxType('expense');
+
+  // Show wallet currency in prefix
+  if (currentWalletData) {
+    document.getElementById('txCurrencyPrefix').textContent = currentWalletData.currency;
+  }
+
+  // Format amount on blur, strip on focus
+  const amtInput = form.querySelector('[name="amount"]');
+  amtInput.value = '';
+  amtInput.addEventListener('focus', function onFocus() {
+    const raw = parseFormatted(this.value);
+    this.value = raw === 0 ? '' : String(raw);
+  });
+  amtInput.addEventListener('blur', function onBlur() {
+    const raw = parseFormatted(this.value);
+    if (!isNaN(raw) && raw !== 0) this.value = fmt(raw);
+  });
+
+  setError('transactionError', '');
   window.addEventListener('keydown', handleEsc);
 }
 
@@ -282,9 +318,20 @@ function cancelAddTransaction() {
 }
 
 async function confirmAddTransaction() {
-  cancelAddTransaction();
   const form = document.getElementById('transactionForm');
-  const data = await Transactions.add(state.currentWalletId, Object.fromEntries(new FormData(form)));
+  const rawAmount = parseFormatted(form.amount.value);
+  if (!rawAmount) return setError('transactionError', 'Please enter an amount');
+
+  const signedAmount = txType === 'expense' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
+  cancelAddTransaction();
+  const payload = {
+    date: form.date.value,
+    object: form.object.value,
+    category: form.category.value,
+    amount: signedAmount,
+  };
+  const data = await Transactions.add(state.currentWalletId, payload);
   if (data.error) return setError('transactionError', data.error);
   state.currentPage = 1;
   await renderWalletDetail();
@@ -337,6 +384,13 @@ function esc(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// Format a number with commas and 2 decimal places, e.g. 1234567.8 → "1,234,567.80"
+const _nf = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function fmt(n) { return _nf.format(n); }
+
+// Strip comma-formatting and return a raw float (for reading formatted inputs)
+function parseFormatted(str) { return parseFloat(String(str).replace(/,/g, '')) || 0; }
 
 // ---------------------------------------------------------------------------
 // Init
