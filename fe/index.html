@@ -1,114 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Squirrel Banking</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="app.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel Banking</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
 </head>
-
 <body>
-    <div id="app">Loading...</div>
+  <div id="app">Loading...</div>
 
-    <template id="login">
-        <section class="login-page">
-            <div class="login-container">
-                <div class="login-title text-center">
-                    <span class="hide-xs">Squirrel</span>
-                    <img class="login-logo" src="logo.svg" alt="Squirrel Banking Logo">
-                    <span class="hide-xs">Banking</span>
-                </div>
-                <div class="login-content">
-                    <h2 class="text-center">Login</h2>
-                    <form id="loginForm" action="javascript:login()">
-                        <label for="loginUser">Username</label>
-                        <input id="loginUser" name="user" type="text" maxlength="20" required>
-                        <label for="loginPassword">Password</label>
-                        <input id="loginPassword" name="password" type="password" maxlength="100" required>
-                        <div id="loginError" class="error" role="alert"></div>
-                        <button>Login</button>
-                    </form>
-                    <p class="login-separator text-center"><span>OR</span></p>
-                    <h2 class="text-center">Register</h2>
-                    <form id="registerForm" action="javascript:register()">
-                        <label for="regUser">Username (required)</label>
-                        <input id="regUser" name="user" type="text" maxlength="20" required>
-                        <label for="regPassword">Password (required)</label>
-                        <input id="regPassword" name="password" type="password" maxlength="100" required>
-                        <label for="regCurrency">Currency (required)</label>
-                        <input id="regCurrency" name="currency" type="text" maxlength="5" value="$" required>
-                        <label for="regDescription">Description</label>
-                        <input id="regDescription" name="description" type="text" maxlength="100">
-                        <label for="regBalance">Current balance</label>
-                        <input id="regBalance" name="balance" type="number" value="0">
-                        <div id="registerError" class="error" role="alert"></div>
-                        <button>Register</button>
-                    </form>
-                </div>
-            </div>
-        </section>
-    </template>
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Login / Register -->
+  <!-- ------------------------------------------------------------------ -->
+  <template id="login">
+    <section class="login-page">
+      <div class="login-container">
+        <div class="login-title text-center">
+          <span class="hide-xs">Squirrel</span>
+          <img class="login-logo" src="logo.svg" alt="Squirrel Banking Logo">
+          <span class="hide-xs">Banking</span>
+        </div>
+        <div class="login-content">
+          <h2 class="text-center">Login</h2>
+          <form id="loginForm" action="javascript:login()">
+            <label for="loginUser">Username</label>
+            <input id="loginUser" name="user" type="text" maxlength="20" required>
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" name="password" type="password" maxlength="100" required>
+            <div id="loginError" class="error" role="alert"></div>
+            <button>Login</button>
+          </form>
+          <p class="login-separator text-center"><span>OR</span></p>
+          <h2 class="text-center">Register</h2>
+          <form id="registerForm" action="javascript:register()">
+            <label for="regUser">Username</label>
+            <input id="regUser" name="user" type="text" maxlength="20" required>
+            <label for="regPassword">Password</label>
+            <input id="regPassword" name="password" type="password" maxlength="100" required>
+            <label for="regCurrency">Currency</label>
+            <input id="regCurrency" name="currency" type="text" maxlength="5" value="$" required>
+            <label for="regDesc">Description</label>
+            <input id="regDesc" name="description" type="text" maxlength="100">
+            <div id="registerError" class="error" role="alert"></div>
+            <button>Register</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </template>
 
-    <template id="dashboard">
-        <section class="dashboard-page">
-            <header class="dashboard-header">
-                <img class="dashboard-logo" src="logo.svg" alt="Squirrel Banking Logo">
-                <h1 class="dashboard-title hide-xs">Squirrel Banking</h1>
-                <button onclick="logout()">Logout</button>
-            </header>
-            <div class="balance">
-                <div>Balance</div>
-                <span id="currency"></span>
-                <span> ~ </span>
-                <span id="balance"></span>
-            </div>
-            <div class="dashboard-content">
-                <div class="transactions-title">
-                    <h2 id="description"></h2>
-                    <button onclick="addTransaction()">Add transaction</button>
-                </div>
-                <table class="transactions-table" aria-label="Transactions">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Object</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactions"></tbody>
-                </table>
-            </div>
-        </section>
-        <section id="transactionDialog" class="dialog">
-            <div class="dialog-content">
-                <h2 class="text-center">Add transaction</h2>
-                <form id="transactionForm" action="javascript:void(0)">
-                    <label for="date">Date</label>
-                    <input id="date" name="date" type="date" required>
-                    <label for="object">Object</label>
-                    <input id="object" name="object" type="text" maxlength="50" required>
-                    <label for="amount">Amount (use negative value for debit)</label>
-                    <input id="amount" name="amount" type="number" value="0" step="any" required>
-                    <div id="transactionError" class="error" role="alert"></div>
-                    <div class="dialog-buttons">
-                        <button type="button" class="button-alt" onclick="cancelTransaction()"
-                            formnovalidate>Cancel</button>
-                        <button formaction="javascript:confirmTransaction()">OK</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-    </template>
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Wallet list -->
+  <!-- ------------------------------------------------------------------ -->
+  <template id="wallet-list">
+    <div class="app-shell">
+      <header class="app-header">
+        <img class="header-logo" src="logo.svg" alt="Logo">
+        <h1 class="header-title hide-xs">Squirrel Banking</h1>
+        <div class="header-right">
+          <span id="walletListUser" class="header-user"></span>
+          <button class="btn-outline" onclick="logout()">Logout</button>
+        </div>
+      </header>
 
-    <template id="transaction">
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-    </template>
+      <main class="wallet-list-page">
+        <div class="wallet-list-header">
+          <h2>My Wallets</h2>
+          <button onclick="showCreateWalletDialog()">+ New Wallet</button>
+        </div>
+        <div id="walletGrid" class="wallet-grid"></div>
+      </main>
+    </div>
+
+    <!-- Create wallet dialog -->
+    <section id="createWalletDialog" class="dialog">
+      <div class="dialog-content">
+        <h2 class="text-center">New Wallet</h2>
+        <form id="createWalletForm" action="javascript:void(0)">
+          <label for="wName">Name</label>
+          <input id="wName" name="name" type="text" maxlength="50" placeholder="e.g. Savings" required>
+          <label for="wCurrency">Currency</label>
+          <input id="wCurrency" name="currency" type="text" maxlength="5" value="$" required>
+          <label for="wDesc">Description</label>
+          <input id="wDesc" name="description" type="text" maxlength="100">
+          <label for="wBalance">Starting balance</label>
+          <input id="wBalance" name="balance" type="number" value="0" step="any">
+          <div class="dialog-buttons">
+            <button type="button" class="button-alt" onclick="cancelCreateWallet()">Cancel</button>
+            <button formaction="javascript:confirmCreateWallet()">Create</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </template>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Wallet detail -->
+  <!-- ------------------------------------------------------------------ -->
+  <template id="wallet-detail">
+    <div class="app-shell">
+      <header class="app-header">
+        <button class="btn-back" onclick="navigate('/wallets')">← Wallets</button>
+        <div class="header-wallet-info">
+          <span id="walletName" class="wallet-detail-name"></span>
+          <span id="walletBalance" class="wallet-detail-balance"></span>
+        </div>
+        <div class="header-right">
+          <button class="btn-icon-sm" onclick="showEditWalletDialog()" title="Edit">✎</button>
+          <button class="btn-icon-sm btn-danger" onclick="deleteWallet()" title="Delete wallet">🗑</button>
+          <button class="btn-outline" onclick="logout()">Logout</button>
+        </div>
+      </header>
+
+      <!-- Weekly summary -->
+      <div class="summary-panel">
+        <div class="summary-label">This week <span id="summaryWeek" class="summary-week"></span></div>
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="summary-stat-label">Income</div>
+            <div id="summaryIncome" class="summary-value positive"></div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Expenses</div>
+            <div id="summaryExpenses" class="summary-value negative"></div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Net</div>
+            <div id="summaryNet" class="summary-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <main class="wallet-detail-page">
+        <p id="walletDescription" class="wallet-desc"></p>
+
+        <!-- Category tabs -->
+        <div id="categoryTabs" class="category-tabs"></div>
+
+        <!-- Transactions -->
+        <div class="table-wrapper">
+          <table class="transactions-table" aria-label="Transactions">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Object</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Balance</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="transactions"></tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button id="btnPrev" onclick="prevPage()">← Prev</button>
+          <span id="pageInfo"></span>
+          <button id="btnNext" onclick="nextPage()">Next →</button>
+        </div>
+
+        <div class="add-tx-row">
+          <div id="transactionError" class="error" role="alert"></div>
+          <button onclick="showAddTransactionDialog()">+ Add Transaction</button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Add transaction dialog -->
+    <section id="transactionDialog" class="dialog">
+      <div class="dialog-content">
+        <h2 class="text-center">Add Transaction</h2>
+        <form id="transactionForm" action="javascript:void(0)">
+          <label for="txDate">Date</label>
+          <input id="txDate" name="date" type="date" required>
+          <label for="txObject">Description</label>
+          <input id="txObject" name="object" type="text" maxlength="50" required>
+          <label for="txCategory">Category</label>
+          <select id="txCategory" name="category"></select>
+          <label for="txAmount">Amount (negative = expense)</label>
+          <input id="txAmount" name="amount" type="number" value="0" step="any" required>
+          <div class="dialog-buttons">
+            <button type="button" class="button-alt" onclick="cancelAddTransaction()">Cancel</button>
+            <button formaction="javascript:confirmAddTransaction()">Add</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </template>
 </body>
-
 </html>
