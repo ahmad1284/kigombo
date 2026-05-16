@@ -4,3 +4,9 @@ node_modules/
 *.db-wal
 .env
 .DS_Store
+
+# Codev
+.agent-farm/
+.consult/
+codev/.update-hashes.json
+.builders/
