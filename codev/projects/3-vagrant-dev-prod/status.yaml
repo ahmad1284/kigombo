@@ -1,0 +1,16 @@
+id: '3'
+title: vagrant-dev-prod
+protocol: aspir
+phase: specify
+plan_phases: []
+current_plan_phase: null
+gates:
+  pr:
+    status: pending
+  verify-approval:
+    status: pending
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-05-17T05:46:56.562Z'
+updated_at: '2026-05-17T05:46:56.563Z'
