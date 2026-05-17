@@ -3,6 +3,8 @@ node_modules/
 *.db-shm
 *.db-wal
 .env
+.env.local
+.env.prod
 .DS_Store
 
 # Codev
