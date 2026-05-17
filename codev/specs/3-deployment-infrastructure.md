@@ -46,3 +46,24 @@ First file wins; `dotenv` does not override already-set vars.
 | `PORT` | HTTP port (default 5000) |
 | `JWT_SECRET` | JWT signing secret — must be changed in prod |
 | `DB_PATH` | Path to SQLite database file |
+
+## Vagrant environments
+
+Two named VMs for local verification of dev and production setups:
+
+| VM | Purpose | Host ports |
+|---|---|---|
+| `dev` | `node --watch` backend + `serve` frontend | 5000 (API), 3000 (UI) |
+| `prod` | PM2 backend + Caddy reverse proxy | 8080 (Caddy → everything) |
+
+Provider: `libvirt` (KVM). Box: `generic/ubuntu2204`.
+
+### serverUrl fix
+
+`fe/app.js` currently hardcodes `http://localhost:5000/api`. This works for dev but breaks the Caddy prod setup where everything flows through port 80. Fix: derive the URL from `location` at runtime:
+
+```js
+const serverUrl = location.port === '3000'
+  ? 'http://localhost:5000/api'         // dev: frontend on :3000, backend on :5000
+  : `${location.protocol}//${location.host}/api`;  // prod: Caddy handles /api/*
+```

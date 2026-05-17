@@ -59,3 +59,29 @@ Caddy auto-provisions TLS via Let's Encrypt — no certbot needed.
 ## Dev script
 
 `nodemon` removed from the dev workflow. `node --watch` (built-in since Node 18) is sufficient and removes a dev dependency.
+
+## Vagrantfile
+
+Two named VMs in a single `Vagrantfile` at the project root. Provider: `libvirt`.
+
+**dev VM**
+- Box: `generic/ubuntu2204`
+- Forwarded ports: guest 5000 → host 5000 (API), guest 3000 → host 3000 (UI)
+- Synced folder: `.` → `/vagrant`
+- Provision: install Node.js 22, `npm install` in `be/`, copy `.env.example` → `.env`, start backend with `node --experimental-sqlite --watch server.js` via nohup, install and start `serve` for `fe/` on port 3000
+
+**prod VM**
+- Box: `generic/ubuntu2204`
+- Forwarded port: guest 80 → host 8080
+- Synced folder: `.` → `/opt/kigombo`
+- Provision: install Node.js 22 + PM2 + Caddy, `npm install --omit=dev`, generate `.env.prod`, create `/var/lib/kigombo`, start PM2, write Caddy config (`:80` instead of domain), reload Caddy
+
+## fe/app.js serverUrl fix
+
+Change the hardcoded `serverUrl` to derive from `location` so it works in both dev and prod (Caddy):
+
+```js
+const serverUrl = location.port === '3000'
+  ? 'http://localhost:5000/api'
+  : `${location.protocol}//${location.host}/api`;
+```
