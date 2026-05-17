@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "build": "cd be && npm install"
+    "build": "cd be && npm install",
+    "test": "echo 'no tests' && exit 0"
   }
 }
