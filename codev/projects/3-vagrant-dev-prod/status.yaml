@@ -1,16 +1,20 @@
 id: '3'
 title: vagrant-dev-prod
 protocol: aspir
-phase: plan
-plan_phases: []
-current_plan_phase: null
+phase: implement
+plan_phases:
+  - id: frontend-serverurl-fix
+    status: in_progress
+  - id: vagrantfile
+    status: pending
+current_plan_phase: frontend-serverurl-fix
 gates:
   pr:
     status: pending
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-05-17T05:46:56.562Z'
-updated_at: '2026-05-17T07:52:25.768Z'
+updated_at: '2026-05-17T08:21:31.731Z'
