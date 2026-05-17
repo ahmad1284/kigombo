@@ -21,7 +21,7 @@ Two remaining items from the deployment infrastructure spec: fix the hardcoded `
       "id": "vagrantfile",
       "name": "Vagrantfile — dev and prod VMs",
       "objective": "Add a Vagrantfile with two named libvirt VMs: dev (node --watch + serve) and prod (PM2 + Caddy)",
-      "files": ["Vagrantfile"],
+      "files": ["Vagrantfile", ".gitignore"],
       "dependencies": ["frontend-serverurl-fix"],
       "success_criteria": "vagrant up dev boots and serves frontend at localhost:3000 and API at localhost:5000; vagrant up prod boots and serves everything via Caddy at localhost:8080"
     }
@@ -52,7 +52,7 @@ Provider: `libvirt`. Box: `generic/ubuntu2204`.
 
 **dev VM**
 - Forwarded ports: guest 5000 → host 5000 (API), guest 3000 → host 3000 (UI)
-- Synced folder: `.` → `/vagrant` (type: `virtiofs` or rsync)
+- Synced folder: `.` → `/vagrant` (type: `rsync`; `virtiofs` is faster but requires QEMU ≥ 4.2 and memfd backing)
 - Provision:
   - Install Node.js 22 via NodeSource
   - `cd /vagrant/be && npm install`
@@ -69,8 +69,9 @@ Provider: `libvirt`. Box: `generic/ubuntu2204`.
   - Generate `.env.prod` (random JWT_SECRET, DB_PATH=/var/lib/kigombo/banka.db)
   - `mkdir -p /var/lib/kigombo`
   - `pm2 start /opt/kigombo/be/ecosystem.config.js --env production`
-  - Write `/etc/caddy/Caddyfile` with `:80` block (no domain, for local testing)
+  - Write `/etc/caddy/Caddyfile` with `:80` block (no domain, for local testing) — this is a file written inside the VM, not a modification to the repo's `Caddyfile`
   - `systemctl reload caddy`
+- Add `.vagrant/` to root `.gitignore` so Vagrant runtime state is not committed
 
 ## Previously implemented (already in codebase)
 
