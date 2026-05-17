@@ -2,7 +2,9 @@
 // Constants
 // ---------------------------------------------------------------------------
 
-const serverUrl = 'http://localhost:5000/api';
+const serverUrl = location.port === '3000'
+  ? 'http://localhost:5000/api'
+  : `${location.protocol}//${location.host}/api`;
 const tokenKey = 'authToken';
 const userKey = 'authUser';
 
