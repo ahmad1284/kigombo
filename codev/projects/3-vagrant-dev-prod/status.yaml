@@ -1,7 +1,7 @@
 id: '3'
 title: vagrant-dev-prod
 protocol: aspir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -10,7 +10,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-05-17T05:46:56.562Z'
-updated_at: '2026-05-17T07:44:31.306Z'
+updated_at: '2026-05-17T07:48:37.931Z'
