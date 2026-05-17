@@ -1,0 +1,8 @@
+your-domain.com {
+    # Serve the frontend
+    root * /opt/kigombo/fe
+    file_server
+
+    # Reverse proxy /api to the Node backend
+    reverse_proxy /api/* localhost:5000
+}

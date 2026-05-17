@@ -1,65 +1,71 @@
 # Kigombo
 
-Banka v2 — a personal finance app. Monorepo with frontend and backend kept as separate sub-projects.
+Banka v2 — a personal finance app. Monorepo with frontend and backend as separate sub-projects.
 
 ## Structure
 
 ```
 kigombo/
-├── fe/   # Vanilla JS SPA
-└── be/   # Express REST API + SQLite
+├── fe/                  # Vanilla JS SPA
+├── be/                  # Express REST API + SQLite
+│   ├── .env.example     # Committed — copy this to get started
+│   ├── .env             # Dev defaults (gitignored)
+│   ├── .env.local       # Local overrides (gitignored)
+│   └── .env.prod        # Production values (gitignored)
+└── Caddyfile            # Caddy reverse proxy config
 ```
 
 ---
 
 ## Development
 
-### Prerequisites
-- Node.js ≥ 22.5 (uses built-in `node:sqlite`)
-- Any static file server (e.g. `npx serve`)
+### 1. Environment
 
-### 1. Backend
+```bash
+cd be
+cp .env.example .env        # base defaults
+cp .env.example .env.local  # your local overrides (optional)
+```
+
+Edit `.env.local` to override anything in `.env`. Values in `.env.local` take priority.
+
+### 2. Backend
 
 ```bash
 cd be
 npm install
-npm run dev        # watch mode — restarts on file changes
+npm run dev   # watch mode — restarts on file changes
 ```
 
-Runs on `http://localhost:5000`. The SQLite database (`banka.db`) is created automatically on first start.
+Runs on `http://localhost:5000`.
 
-### 2. Frontend
+### 3. Frontend
 
 ```bash
-# From repo root — serve the fe/ directory on any port
 npx serve fe/ -p 3000
-# or
-python3 -m http.server 3000 -d fe/
 ```
 
-Open `http://localhost:3000`. The frontend talks to `http://localhost:5000` by default (see `serverUrl` in `fe/app.js`).
-
-### Environment variables (backend)
-
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `5000` | HTTP port |
-| `JWT_SECRET` | `change-me-in-production` | Secret for signing JWTs — **change this** |
-| `DB_PATH` | `./banka.db` | Path to SQLite database file |
+Open `http://localhost:3000`. The frontend talks to `http://localhost:5000/api` by default (see `serverUrl` in `fe/app.js`).
 
 ---
 
-## Production (Ubuntu bare metal)
+## Production (Ubuntu + PM2 + Caddy)
 
 ### Prerequisites
 
 ```bash
-# Node.js 22 via NodeSource
+# Node.js 22
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# nginx + git
-sudo apt-get install -y nginx git
+# PM2
+sudo npm install -g pm2
+
+# Caddy
+sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt-get update && sudo apt-get install -y caddy
 ```
 
 ### 1. Clone and install
@@ -72,99 +78,75 @@ cd /opt/kigombo/be
 npm install --omit=dev
 ```
 
-### 2. Environment file
+### 2. Production env file
 
 ```bash
-sudo mkdir -p /etc/kigombo
-sudo tee /etc/kigombo/env <<'EOF'
-PORT=5000
-JWT_SECRET=<generate a long random string>
-DB_PATH=/var/lib/kigombo/banka.db
-EOF
-sudo chmod 600 /etc/kigombo/env
+cp .env.example .env.prod
+```
 
-# Create DB directory
+Edit `.env.prod`:
+
+```bash
+PORT=5000
+JWT_SECRET=<run: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))">
+DB_PATH=/var/lib/kigombo/banka.db
+```
+
+Create the DB directory:
+
+```bash
 sudo mkdir -p /var/lib/kigombo
 sudo chown $USER:$USER /var/lib/kigombo
 ```
 
-Generate a secret: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
-
-### 3. systemd service
+### 3. PM2
 
 ```bash
-sudo tee /etc/systemd/system/kigombo.service <<'EOF'
-[Unit]
-Description=Kigombo API
-After=network.target
+cd /opt/kigombo/be
 
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/opt/kigombo/be
-EnvironmentFile=/etc/kigombo/env
-ExecStart=/usr/bin/node --experimental-sqlite server.js
-Restart=on-failure
-RestartSec=5
+# Start with production env
+pm2 start ecosystem.config.js --env production
 
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo chown -R www-data:www-data /var/lib/kigombo
-sudo systemctl daemon-reload
-sudo systemctl enable --now kigombo
-sudo systemctl status kigombo
+# Save process list and enable startup on boot
+pm2 save
+pm2 startup   # follow the printed command to install the init hook
 ```
 
-### 4. nginx
-
-Serve the frontend as static files and reverse-proxy `/api` to the backend.
+Useful commands:
 
 ```bash
-sudo tee /etc/nginx/sites-available/kigombo <<'EOF'
-server {
-    listen 80;
-    server_name your-domain.com;   # replace or use _ for any
+pm2 status          # check running processes
+pm2 logs kigombo    # tail logs
+pm2 restart kigombo # restart after a deploy
+```
 
-    # Frontend — static files
-    root /opt/kigombo/fe;
-    index index.html;
+### 4. Caddy
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+Edit `/opt/kigombo/Caddyfile` — replace `your-domain.com` with your actual domain:
 
-    # Backend — proxy /api to Node
-    location /api {
-        proxy_pass         http://127.0.0.1:5000;
-        proxy_http_version 1.1;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
+```
+your-domain.com {
+    root * /opt/kigombo/fe
+    file_server
+
+    reverse_proxy /api/* localhost:5000
 }
-EOF
-
-sudo ln -s /etc/nginx/sites-available/kigombo /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
 ```
+
+Then:
+
+```bash
+sudo cp /opt/kigombo/Caddyfile /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+```
+
+Caddy handles TLS automatically via Let's Encrypt — nothing extra needed.
 
 Update `serverUrl` in `fe/app.js` to match your domain:
 
 ```js
-// fe/app.js
 const serverUrl = 'https://your-domain.com/api';
 ```
-
-### 5. TLS (recommended)
-
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
-
-Certbot will auto-update the nginx config and schedule renewal.
 
 ### Updating
 
@@ -172,14 +154,33 @@ Certbot will auto-update the nginx config and schedule renewal.
 cd /opt/kigombo
 git pull
 cd be && npm install --omit=dev
-sudo systemctl restart kigombo
+pm2 restart kigombo
 ```
+
+---
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `5000` | HTTP port the API listens on |
+| `JWT_SECRET` | `dev-secret-...` | Secret for signing JWTs — **always change in prod** |
+| `DB_PATH` | `./banka.db` | Path to the SQLite database file |
+
+### Load order
+
+`server.js` loads env files in this order (later values do **not** override earlier ones):
+
+| `NODE_ENV` | Files loaded |
+|---|---|
+| unset / `development` | `.env.local` → `.env` |
+| `production` | `.env.prod` → `.env` |
 
 ---
 
 ## API
 
-All routes require `Authorization: Bearer <token>` except register/login.
+All routes require `Authorization: Bearer <token>` except register and login.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -188,13 +189,13 @@ All routes require `Authorization: Bearer <token>` except register/login.
 | `GET` | `/api/wallets` | ✓ | List wallets |
 | `POST` | `/api/wallets` | ✓ | Create wallet |
 | `GET` | `/api/wallets/:id` | ✓ | Wallet detail + paginated transactions |
-| `PUT` | `/api/wallets/:id` | ✓ | Update wallet name/description/currency |
+| `PUT` | `/api/wallets/:id` | ✓ | Update wallet name / description / currency |
 | `DELETE` | `/api/wallets/:id` | ✓ | Delete wallet |
-| `GET` | `/api/wallets/:id/summary` | ✓ | Weekly income/expenses/net |
+| `GET` | `/api/wallets/:id/summary` | ✓ | Weekly income / expenses / net |
 | `POST` | `/api/wallets/:id/transactions` | ✓ | Add transaction |
 | `DELETE` | `/api/wallets/:id/transactions/:txId` | ✓ | Remove transaction |
 
-### Pagination & filtering
+Pagination and filtering:
 
 ```
 GET /api/wallets/:id?page=1&limit=20&category=Food

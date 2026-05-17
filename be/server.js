@@ -1,3 +1,7 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, `.env.${process.env.NODE_ENV === 'production' ? 'prod' : 'local'}`), quiet: true });
+require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
